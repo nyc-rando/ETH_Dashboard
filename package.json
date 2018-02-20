@@ -1,0 +1,11 @@
+{
+  "name": "gdax",
+  "version": "1.0.0",
+  "description": "ticker",
+  "main": "server1.js",
+  "scripts": {
+    "dev": "nodemon server1.js"
+  },
+  "author": "Tony Randazzo",
+  "license": "ISC"
+}

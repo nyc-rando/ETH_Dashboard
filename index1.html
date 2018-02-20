@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<head>
+<title id="title">Ticker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+</head>
+
+<body>
+
+<br>
+<style>
+   div {float: left;}
+  .stats {margin-left: 5px;}
+  .chart {max-width: 900px;}
+</style>
+<div>Current Price:</div><div class="stats" id="current">Checking... Pls wait a moment.</div>
+<br>
+<div>High:</div><div class="stats" id="high">Checking...</div>
+<br>
+<div>Low:</div><div class="stats" id="low">Checking...</div>
+<br>
+<div>Volume:</div><div class="stats" id="volume">Checking...</div>
+<br>
+<div>Bids (buy orders w/in $1.50):</div><div class="stats" id="bids">Checking...</div>
+<br>
+<div>Asks (sell orders w/in $1.50):</div><div class="stats" id="asks">Checking...</div>
+<br>
+<hr>
+<br>
+<div class="chart">
+ <canvas id="eth-price" width="800" height="450"></canvas>
+</div>
+<br>
+<br>
+<div class="chart">
+ <canvas id="eth-orders" width="800" height="450"></canvas>
+</div>
+<br>
+<br>
+<div class="chart">
+ <canvas id="eth-volume" width="800" height="450"></canvas>
+</div>
+<script>
+
+var priceArr = [];
+var timeStamps = [];
+var volume = [];
+var current = [];
+var high;
+var low;
+
+//Populates Historical Data for Graph (Last 60 minutes), refreshes with new data hereafter
+setTimeout(function(){
+fetch('chart', {method: 'get'}).then(res => res.json()).then(function(data, err) {
+      var oneHundred = data.slice(0, 99).reverse();
+      oneHundred.forEach( el => {
+        timeStamps.push(new Date(el[0] * 1000).toLocaleTimeString());
+        priceArr.push( el[4] );
+        volume.push( el[5] );
+      });
+      high = Math.max(...priceArr);
+      low = Math.min(...priceArr);
+      document.getElementById('high').innerHTML = high;
+      document.getElementById('low').innerHTML = low;
+      document.getElementById('volume').innerHTML = volume.reduce((a,b) => a+b).toFixed(2);
+      document.getElementById('current').innerHTML = priceArr[priceArr.length-1];
+      document.getElementById('title').innerHTML = priceArr[priceArr.length-1];
+    });
+
+//Draws initial Historical Price chart, then get overriden by the interval call to /chart path below
+    setTimeout(function(){
+      new Chart(document.getElementById("eth-price"), {
+        type: 'line',
+        data: {
+          labels: timeStamps,
+          datasets: [{
+              data: priceArr,
+              label: "ETH",
+              borderColor: "#3e95cd",
+              fill: false
+           }]
+        },
+        options: {
+          title: {
+            display: true,
+            text: 'ETH Price'
+          }
+        }
+      });
+
+//Draws Volumes Chart and stays static at the moment, not refreshed for now
+      new Chart(document.getElementById("eth-volume"), {
+        type: 'bar',
+        data: {
+          labels: timeStamps,
+          datasets: [{
+              data: volume,
+              label: "ETH",
+              borderColor: "#3e95cd",
+              fill: true
+           }]
+        },
+        options: {
+          title: {
+            display: true,
+            text: 'ETH 5m Volume'
+          }
+        }
+      });
+
+    },2000);
+
+},1000);
+
+//Updates the title with current price every 5 seconds
+setInterval(function(){
+
+    fetch('price', {method: 'get'}).then(data => data.json()).then(function(data, err) {
+      var price = data;
+      document.getElementById('title').innerHTML = price;
+      document.getElementById('current').innerHTML = price;
+      priceArr[priceArr.length-1] = price;
+      current = price;
+      if (price > high) document.getElementById('high').innerHTML = price;
+      if (price < low) document.getElementById('low').innerHTML = price;
+    });
+
+//Updates only the latest data point on the  the Price chart to keep it real-time
+    setTimeout(function(){
+      new Chart(document.getElementById("eth-price"), {
+        type: 'line',
+        data: {
+          labels: timeStamps,
+          datasets: [{
+              data: priceArr,
+              label: "ETH",
+              borderColor: "#3e95cd",
+              fill: false
+           }]
+        },
+        options: {
+          title: {
+            display: true,
+            text: 'ETH Price'
+          },
+          animation: {
+            duration: 0
+          }
+        }
+      });
+
+    },1000);
+
+}, 3000);
+
+//Refreshes the overall Historical Price Chart every 5 minutes:
+setInterval(function(){
+
+    fetch('chart', {method: 'get'}).then(data => data.json()).then(function(data, err) {
+      //timeStamps.shift();
+      //timeStamps.push(new Date().toLocaleTimeString());
+      //priceArr.shift();
+      //priceArr.push(data);
+      var oneHundred = data.slice(0, 99).reverse();
+      timeStamps = [];
+      priceArr = [];
+      oneHundred.forEach( el => {
+        timeStamps.push(new Date(el[0] * 1000).toLocaleTimeString());
+        priceArr.push( el[4] );
+      });
+      high = Math.max(...priceArr);
+      low = Math.min(...priceArr);
+      if (high > current) document.getElementById('high').innerHTML = high;
+      if (low < current) document.getElementById('low').innerHTML = low;
+    });
+      new Chart(document.getElementById("eth-price"), {
+        type: 'line',
+        data: {
+          labels: timeStamps,
+          datasets: [{
+              data: priceArr,
+              label: "ETH",
+              borderColor: "#3e95cd",
+              fill: false
+           }]
+        },
+        options: {
+          title: {
+            display: true,
+            text: 'ETH Price'
+          }
+        }
+      });
+
+}, 300000);
+
+
+setInterval(function(){
+
+    fetch('price', {method: 'get'}).then(data => data.json()).then(function(data, err) {
+      var price = data;
+      document.getElementById('title').innerHTML = price;
+      document.getElementById('current').innerHTML = price;
+      priceArr[priceArr.length-1] = price;
+      current = price;
+      if (price > high) document.getElementById('high').innerHTML = price;
+      if (price < low) document.getElementById('low').innerHTML = price;
+    });
+
+    setTimeout(function(){
+      new Chart(document.getElementById("eth-price"), {
+        type: 'line',
+        data: {
+          labels: timeStamps,
+          datasets: [{
+              data: priceArr,
+              label: "ETH",
+              borderColor: "#3e95cd",
+              fill: false
+           }]
+        },
+        options: {
+          title: {
+            display: true,
+            text: 'ETH Price'
+          },
+          animation: {
+            duration: 0
+          }
+        }
+      });
+
+    },1000);
+
+}, 3000);
+
+//Updates Bid / Ask orders every 3 seconds, specify the $ range below:
+var orderBookChart;
+setInterval(function(){
+
+    fetch('bidAsk', {method: 'get'}).then(data => data.json()).then(function(data, err) {
+      //console.log(data);
+      document.getElementById('asks').innerHTML = data.askTotal;
+      document.getElementById('bids').innerHTML = data.bidTotal;
+      if ((data.askTotal - data.bidTotal) > 150) {
+          document.getElementById('asks').style.color = 'red';
+      } else if ((data.bidTotal - data.askTotal) > 150) {
+          document.getElementById('bids').style.color = 'green';
+      } else {
+          document.getElementById('asks').style.color = 'black';
+          document.getElementById('bids').style.color = 'black';
+      }
+
+      orderBookChart = data.chartData;
+
+    });
+
+//draws orderbook chart
+    setTimeout(function(){
+      new Chart(document.getElementById("eth-orders"), {
+        type: 'line',
+        data: {
+          labels: orderBookChart[1],
+          datasets: [{
+              data: orderBookChart[0],
+              label: "ETH Order Book",
+              borderColor: "#3e95cd",
+              fill: false
+           }]
+        },
+        options: {
+          title: {
+            display: true,
+            text: 'ETH Order Book'
+          },
+          animation: {
+            duration: 0
+          }
+        }
+      });
+
+    },1000);
+
+}, 3000);
+
+</script>
+
+</body>
+
+</html>
