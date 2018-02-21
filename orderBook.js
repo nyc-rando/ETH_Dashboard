@@ -73,13 +73,21 @@ function ordersArr(obj){
   return newArr;
 }
 
+//adds commas per thousands to values, accounts for decimal values.
+function formatCommas(x) {
+  var wholeNumbers = x.toString().split(".");
+  wholeNumbers[0] = wholeNumbers[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return wholeNumbers.join(".");
+}
+
 //Object of all functions to export to server
 var funcObj = {
     totalOrders: totalOrders,
     createObj: createObj,
     comparer: comparer,
     sum: sum,
-    orderChart: orderChart
+    orderChart: orderChart,
+    formatCommas: formatCommas
 };
 
 //Exports above Object to our server

@@ -72,10 +72,22 @@ setInterval(function(){
 }, 2000);
 
 
+//Makes call to GDAX API and stored latest BTC Price and OrderBook Details to Server every 2s
+setInterval(function(){
+    publicClient.getProductOrderBook('BTC-USD',{ level: 3 },(error, response, book) => {
+    var bidBTC = parseFloat(book['bids'][0][0]);
+    var askBTC = parseFloat(book['asks'][0][0]);
+    midBTC = ((bidBTC + askBTC)/2).toFixed(2);
+    });
+}, 2000);
+
 //Route that Sends current mid (price) to browser
 app.get('/price', (req, res) => {
-    if (midETH) {
-        res.send(midETH.toString());
+    if (midETH && midBTC) {
+        res.send({
+          eth: midETH.toString(),
+          btc: orderBookFuncs.formatCommas(midBTC)
+          });
     }
 });
 

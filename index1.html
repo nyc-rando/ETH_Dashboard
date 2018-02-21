@@ -27,6 +27,8 @@
 <br>
 <div>Asks (sell orders w/in $1.50):</div><div class="stats" id="asks">Checking...</div>
 <br>
+<div>BTC:</div><div class="stats" id="btc">Checking...</div>
+<br>
 <hr>
 <br>
 <div class="chart">
@@ -50,6 +52,7 @@ var volume = [];
 var current = [];
 var high;
 var low;
+var midBTC;
 
 //Populates Historical Data for Graph (Last 60 minutes), refreshes with new data hereafter
 setTimeout(function(){
@@ -64,7 +67,7 @@ fetch('chart', {method: 'get'}).then(res => res.json()).then(function(data, err)
       low = Math.min(...priceArr);
       document.getElementById('high').innerHTML = high;
       document.getElementById('low').innerHTML = low;
-      document.getElementById('volume').innerHTML = volume.reduce((a,b) => a+b).toFixed(2);
+      document.getElementById('volume').innerHTML = formatCommas(volume.reduce((a,b) => a+b).toFixed(2));
       document.getElementById('current').innerHTML = priceArr[priceArr.length-1];
       document.getElementById('title').innerHTML = priceArr[priceArr.length-1];
     });
@@ -118,9 +121,11 @@ fetch('chart', {method: 'get'}).then(res => res.json()).then(function(data, err)
 setInterval(function(){
 
     fetch('price', {method: 'get'}).then(data => data.json()).then(function(data, err) {
-      var price = data;
+      midBTC = data.btc;
+      var price = data.eth;
       document.getElementById('title').innerHTML = price;
       document.getElementById('current').innerHTML = price;
+      document.getElementById('btc').innerHTML = midBTC;
       priceArr[priceArr.length-1] = price;
       current = price;
       if (price > high) document.getElementById('high').innerHTML = price;
@@ -200,7 +205,8 @@ setInterval(function(){
 setInterval(function(){
 
     fetch('price', {method: 'get'}).then(data => data.json()).then(function(data, err) {
-      var price = data;
+      midBTC = data.btc;
+      var price = data.eth;
       document.getElementById('title').innerHTML = price;
       document.getElementById('current').innerHTML = price;
       priceArr[priceArr.length-1] = price;
@@ -284,6 +290,13 @@ setInterval(function(){
     },1000);
 
 }, 3000);
+
+//adds commas per thousands to values, accounts for decimal values.
+function formatCommas(x) {
+  var wholeNumbers = x.toString().split(".");
+  wholeNumbers[0] = wholeNumbers[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return wholeNumbers.join(".");
+}
 
 </script>
 
