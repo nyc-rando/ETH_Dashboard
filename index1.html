@@ -12,7 +12,11 @@
 <br>
 <style>
    div {float: left;}
-  .stats {margin-left: 5px;}
+  .stats {
+    margin-left: 5px;
+    margin-right: 5px
+  }
+   #ltc {margin-left: 5px;}
   .chart {max-width: 900px;}
 </style>
 <div>Current Price:</div><div class="stats" id="current">Checking... Pls wait a moment.</div>
@@ -21,13 +25,13 @@
 <br>
 <div>Low:</div><div class="stats" id="low">Checking...</div>
 <br>
-<div>Volume:</div><div class="stats" id="volume">Checking...</div>
+<div>Volume_24hr:</div><div class="stats" id="volume">Checking...</div>
 <br>
 <div>Bids (buy orders w/in $1.50):</div><div class="stats" id="bids">Checking...</div>
 <br>
 <div>Asks (sell orders w/in $1.50):</div><div class="stats" id="asks">Checking...</div>
 <br>
-<div>BTC:</div><div class="stats" id="btc">Checking...</div>
+<div>BTC:</div><div class="stats" id="btc">Checking...</div><div>/   LTC:</div><div class="stats" id="ltc">Checking...</div>
 <br>
 <hr>
 <br>
@@ -52,7 +56,6 @@ var volume = [];
 var current = [];
 var high;
 var low;
-var midBTC;
 
 //Populates Historical Data for Graph (Last 60 minutes), refreshes with new data hereafter
 setTimeout(function(){
@@ -67,7 +70,6 @@ fetch('chart', {method: 'get'}).then(res => res.json()).then(function(data, err)
       low = Math.min(...priceArr);
       document.getElementById('high').innerHTML = high;
       document.getElementById('low').innerHTML = low;
-      document.getElementById('volume').innerHTML = formatCommas(volume.reduce((a,b) => a+b).toFixed(2));
       document.getElementById('current').innerHTML = priceArr[priceArr.length-1];
       document.getElementById('title').innerHTML = priceArr[priceArr.length-1];
     });
@@ -117,19 +119,23 @@ fetch('chart', {method: 'get'}).then(res => res.json()).then(function(data, err)
 
 },1000);
 
-//Updates the title with current price every 5 seconds
+//Updates the title prices with current price every 3 seconds
 setInterval(function(){
 
     fetch('price', {method: 'get'}).then(data => data.json()).then(function(data, err) {
-      midBTC = data.btc;
-      var price = data.eth;
-      document.getElementById('title').innerHTML = price;
-      document.getElementById('current').innerHTML = price;
-      document.getElementById('btc').innerHTML = midBTC;
-      priceArr[priceArr.length-1] = price;
-      current = price;
-      if (price > high) document.getElementById('high').innerHTML = price;
-      if (price < low) document.getElementById('low').innerHTML = price;
+      var midETH = data.eth;
+      var eth = JSON.parse(data.allCoins['eth']);
+      var btc = JSON.parse(data.allCoins['btc']);
+      var ltc = JSON.parse(data.allCoins['ltc']);
+      document.getElementById('title').innerHTML = midETH;
+      document.getElementById('current').innerHTML = midETH;
+      document.getElementById('btc').innerHTML = formatCommas(parseFloat(btc.price).toFixed(2));
+      document.getElementById('ltc').innerHTML = parseFloat(ltc.price).toFixed(2);
+      document.getElementById('volume').innerHTML = formatCommas(parseInt(eth.volume));
+      priceArr[priceArr.length-1] = midETH;
+      current = midETH;
+      if (midETH > high) document.getElementById('high').innerHTML = midETH;
+      if (midETH < low) document.getElementById('low').innerHTML = midETH;
     });
 
 //Updates only the latest data point on the  the Price chart to keep it real-time
@@ -164,10 +170,6 @@ setInterval(function(){
 setInterval(function(){
 
     fetch('chart', {method: 'get'}).then(data => data.json()).then(function(data, err) {
-      //timeStamps.shift();
-      //timeStamps.push(new Date().toLocaleTimeString());
-      //priceArr.shift();
-      //priceArr.push(data);
       var oneHundred = data.slice(0, 99).reverse();
       timeStamps = [];
       priceArr = [];
@@ -202,52 +204,11 @@ setInterval(function(){
 }, 300000);
 
 
-setInterval(function(){
-
-    fetch('price', {method: 'get'}).then(data => data.json()).then(function(data, err) {
-      midBTC = data.btc;
-      var price = data.eth;
-      document.getElementById('title').innerHTML = price;
-      document.getElementById('current').innerHTML = price;
-      priceArr[priceArr.length-1] = price;
-      current = price;
-      if (price > high) document.getElementById('high').innerHTML = price;
-      if (price < low) document.getElementById('low').innerHTML = price;
-    });
-
-    setTimeout(function(){
-      new Chart(document.getElementById("eth-price"), {
-        type: 'line',
-        data: {
-          labels: timeStamps,
-          datasets: [{
-              data: priceArr,
-              label: "ETH",
-              borderColor: "#3e95cd",
-              fill: false
-           }]
-        },
-        options: {
-          title: {
-            display: true,
-            text: 'ETH Price'
-          },
-          animation: {
-            duration: 0
-          }
-        }
-      });
-
-    },1000);
-
-}, 3000);
-
 //Updates Bid / Ask orders every 3 seconds, specify the $ range below:
 var orderBookChart;
 setInterval(function(){
 
     fetch('bidAsk', {method: 'get'}).then(data => data.json()).then(function(data, err) {
-      //console.log(data);
       document.getElementById('asks').innerHTML = data.askTotal;
       document.getElementById('bids').innerHTML = data.bidTotal;
       if ((data.askTotal - data.bidTotal) > 150) {

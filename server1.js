@@ -54,7 +54,6 @@ app.get('/chart', (req, res) => {
 let bidETH;
 let askETH;
 let midETH;
-let midBTC;
 let bidTotal;
 let askTotal;
 let orderBookArr;
@@ -71,27 +70,36 @@ setInterval(function(){
     });
 }, 2000);
 
+var stats24hr = {
+  eth: {},
+  btc: {},
+  ltc: {}
+}
 
-//Makes call to GDAX API and stored latest BTC Price and OrderBook Details to Server every 2s
+//Makes call to GDAX API and stored latest Price/Vol Details to Server every 2s
 setInterval(function(){
-    publicClient.getProductOrderBook('BTC-USD',{ level: 3 },(error, response, book) => {
-    var bidBTC = parseFloat(book['bids'][0][0]);
-    var askBTC = parseFloat(book['asks'][0][0]);
-    midBTC = ((bidBTC + askBTC)/2).toFixed(2);
+    publicClient.getProductTicker('BTC-USD' , (err, res) => {
+      stats24hr.btc = res.body;
     });
+     publicClient.getProductTicker('ETH-USD' , (err, res) => {
+      stats24hr.eth = res.body;
+    });
+     publicClient.getProductTicker('LTC-USD' , (err, res) => {
+      stats24hr.ltc = res.body;
+     });
 }, 2000);
 
 //Route that Sends current mid (price) to browser
 app.get('/price', (req, res) => {
-    if (midETH && midBTC) {
+    if (midETH) {
         res.send({
           eth: midETH.toString(),
-          btc: orderBookFuncs.formatCommas(midBTC)
-          });
+          allCoins: stats24hr
+        });
     }
 });
 
-//ROute that Sends object of Total Bids & Asks at specified levels and also DataPoints to Chart Orderbook
+//Route that Sends object of Total Bids & Asks at specified levels and also DataPoints to Chart Orderbook
 app.get('/bidAsk', (req, res) => {
     if (bidTotal) {
         res.send({
