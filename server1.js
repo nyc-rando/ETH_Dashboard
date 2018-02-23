@@ -61,12 +61,14 @@ let orderBookArr;
 //Makes call to GDAX API and stored latest Price and OrderBook Details to Server every 2s
 setInterval(function(){
     publicClient.getProductOrderBook('ETH-USD',{ level: 3 },(error, response, book) => {
-    bidETH = parseFloat(book['bids'][0][0]);
-    askETH = parseFloat(book['asks'][0][0]);
-    midETH = ((bidETH + askETH)/2).toFixed(2);
-    bidTotal = orderBookFuncs.sum(book['bids'], -1.50);
-    askTotal = orderBookFuncs.sum(book['asks'], 1.50);
-    orderBookArr = [book['bids'], book['asks']];
+      if (book) {
+        bidETH = parseFloat(book['bids'][0][0]);
+        askETH = parseFloat(book['asks'][0][0]);
+        midETH = ((bidETH + askETH)/2).toFixed(2);
+        bidTotal = orderBookFuncs.sum(book['bids'], -1.50);
+        askTotal = orderBookFuncs.sum(book['asks'], 1.50);
+        orderBookArr = [book['bids'], book['asks']];
+      }
     });
 }, 2000);
 
@@ -74,7 +76,7 @@ var stats24hr = {
   eth: {},
   btc: {},
   ltc: {}
-}
+};
 
 //Makes call to GDAX API and stored latest Price/Vol Details to Server every 2s
 setInterval(function(){
